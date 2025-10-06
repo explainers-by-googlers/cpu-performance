@@ -1,24 +1,15 @@
-# Explainer for the TODO API
+# CPU Performance API
 
-**Instructions for the explainer author: Search for "todo" in this repository and update all the
-instances as appropriate. For the instances in `index.bs`, update the repository name, but you can
-leave the rest until you start the specification. Then delete the TODOs and this block of text.**
-
-This proposal is an early design sketch by [TODO: team] to describe the problem below and solicit
+This proposal is an early design sketch by Chrome to describe the problem below and solicit
 feedback on the proposed solution. It has not been approved to ship in Chrome.
 
-TODO: Fill in the whole explainer template below using https://tag.w3.org/explainers/ as a
-reference. Look for [brackets].
+## Authors:
 
-## Proponents
-
-- [Proponent team 1]
-- [Proponent team 2]
-- [etc.]
+- Nikolaos Papaspyrou (Google Chrome)
 
 ## Participate
-- https://github.com/explainers-by-googlers/[your-repository-name]/issues
-- [Discussion forum]
+- [Issue tracker](https://github.com/explainers-by-googlers/cpu-performance/issues)
+- [Discussion forum](https://github.com/explainers-by-googlers/cpu-performance/discussions)
 
 ## Table of Contents [if the explainer is longer than one printed page]
 
@@ -27,159 +18,236 @@ reference. Look for [brackets].
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Introduction](#introduction)
-- [Goals](#goals)
-- [Non-goals](#non-goals)
-- [User research](#user-research)
-- [Use cases](#use-cases)
-  - [Use case 1](#use-case-1)
-  - [Use case 2](#use-case-2)
-- [[Potential Solution]](#potential-solution)
-  - [How this solution would solve the use cases](#how-this-solution-would-solve-the-use-cases)
-    - [Use case 1](#use-case-1-1)
-    - [Use case 2](#use-case-2-1)
-- [Detailed design discussion](#detailed-design-discussion)
-  - [[Tricky design choice #1]](#tricky-design-choice-1)
-  - [[Tricky design choice 2]](#tricky-design-choice-2)
-- [Considered alternatives](#considered-alternatives)
-  - [[Alternative 1]](#alternative-1)
-  - [[Alternative 2]](#alternative-2)
-- [Security and Privacy Considerations](#security-and-privacy-considerations)
+- [Motivating Use Cases](#motivating-use-cases)
+  - [Goals](#goals)
+  - [Non-goals](#non-goals)
+- [Proposed Approach](#proposed-approach)
+- [Alternatives Considered](#alternatives-considered)
+  - [Nature and Semantics of Performance Buckets](#nature-and-semantics-of-performance-buckets)
+  - [Benchmark-based Classification](#benchmark-based-classification)
+- [Accessibility, Privacy, and Security Considerations](#accessibility-privacy-and-security-considerations)
 - [Stakeholder Feedback / Opposition](#stakeholder-feedback--opposition)
-- [References & acknowledgements](#references--acknowledgements)
+- [References & Acknowledgements](#references--acknowledgements)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Introduction
 
-[The "executive summary" or "abstract".
-Explain in a few sentences what the goals of the project are,
-and a brief overview of how the solution works.
-This should be no more than 1-2 paragraphs.]
+We propose a new Web API that exposes some information about how powerful the
+user device is. This API targets applications that will use this information to
+provide an improved user experience, possibly in combination with the [Compute
+Pressure API](https://github.com/w3c/compute-pressure), which provides
+information about the user device’s CPU pressure/utilization and allows
+applications to react to changes in CPU pressure. E.g., video-conferencing
+applications or video games may use this information to decide if advanced video
+effects can be rendered; all types of applications may use it to decide whether
+to attempt running AI tasks locally or delegate to the server, etc.
 
-## Goals
+The main consideration for implementing such an API is related to user privacy.
+Exposing detailed CPU information (such as the CPU vendor, model name, the
+number of processors and cores, etc., that the internal API currently provides)
+is not an option, as it violates user privacy by allowing fingerprinting.
 
-[What is the **end-user need** which this project aims to address? Make this section short, and
-elaborate in the Use cases section.]
+## Motivating Use Cases
 
-## Non-goals
+At present, some video conferencing applications support advanced functionality
+by relying on internal/private browser extensions or APIs (see the [Hangouts
+Extension](https://crsrc.org/c/chrome/browser/resources/hangout_services/thunk.js?q=thunk.js))
+to classify devices into performance categories. Our proposal allows these
+applications to support existing functionality without depending on such
+non-standard features.
 
-[If there are "adjacent" goals which may appear to be in scope but aren't,
-enumerate them here. This section may be fleshed out as your design progresses and you encounter necessary technical and other trade-offs.]
+Applications whose functionality depends on client-side hardware detection often
+resort to running benchmark workloads, to estimate hardware capabilities.
+Providing a public CPU Performance API would help prevent a needless waste of
+resources.
 
-## User research
+### Goals
 
-[If any user research has been conducted to inform your design choices,
-discuss the process and findings. User research should be more common than it is.]
+-   Allow applications to estimate CPU performance without resorting to
+    internal/private extensions or APIs and without resorting to running
+    custom benchmark workloads.
+-   Protect user privacy. The proposed API must not expose more device
+    information than what can be easily obtained by other means (e.g.,
+    benchmarking) and, even then, it must not facilitate user fingerprinting.
 
-## Use cases
+In order to fulfill these two goals, the proposed API can use some sort of
+classification for the user device's hardware, mapping specific devices to a
+small number of **performance buckets**. With this type of solution in mind,
+further goals of the proposed API are:
 
-[Describe in detail what problems end-users are facing, which this project is trying to solve. A
-common mistake in this section is to take a web developer's or server operator's perspective, which
-makes reviewers worry that the proposal will violate [RFC 8890, The Internet is for End
-Users](https://www.rfc-editor.org/rfc/rfc8890).]
+-   Be hardware agnostic. The API's specification should not contain an explicit
+    database-like mapping of existing hardware to performance buckets.
+-   Be consistent and reproducible. The mapping of devices to performance
+    buckets should reflect the performance that can be measured with specific
+    benchmarks, ideally using programming tools provided by a browser
+    (JavaScript, WebAssembly, etc.).
+-   Be future-proof. The proposed API should be easily and predictably
+    extensible for hardware that will be released in the future. In particular,
+    if the API’s implementation is based on some database, the API should
+    function properly even for existing hardware that is not contained in the
+    database.
+-   Respect privacy. Each performance bucket should contain a fairly large
+    number of devices that exist on the internet at any given time, both as an
+    absolute number and as distinct device models.
+-   Respect obsolete hardware and applications. The same version of a web
+    application should produce the same user experience on the same hardware, at
+    any time in the future. Therefore, the performance bucket associated with a
+    specific user device should not change over time.
 
-### Use case 1
+### Non-goals
 
-### Use case 2
+This version of the API focuses on CPU performance. It does not target other
+hardware characteristics that are possibly useful, such as GPU performance,
+available memory, power consumption, and so on.
 
-<!-- In your initial explainer, you shouldn't be attached or appear attached to any of the potential
-solutions you describe below this. -->
+## Proposed Approach
 
-## [Potential Solution]
+Similarly to the web-exposed [Device Memory
+API](https://github.com/w3c/device-memory), the proposed API will add a new
+read-only attribute to navigator: `navigator.cpuPerformance`, which returns
+a small integer number, indicating the performance bucket that corresponds
+to the user device. The exact value of this attribute (an `unsigned short`)
+will be implementation-specific and it will be generally expected to reflect
+the **performance tier** in which a user device belongs. Higher values
+correspond to higher performance tiers. There will be at least four distinct
+performance tiers, numbered 1-4, and the special value 0 will correspond to
+an unknown performance tier (returned in case the API's implementation is
+unable to classify the user device).
 
-[For each related element of the proposed solution - be it an additional JS method, a new object, a new element, a new concept etc., create a section which briefly describes it.]
+For example, a video conferencing application could interpret the four
+performance tiers as follows:
+
+-   1: devices that are practically unusable for video calls;
+-   2: underpowered devices but still adequately suited for video calls;
+-   3: devices that can comfortably accommodate video calls; and
+-   4: devices that can run even the most demanding scenarios and have
+    performance to spare for multitasking.
+
+It could use the value of `navigator.cpuPerformance` for pre-selecting a number
+of features that are best supported by the user device's performance tier.
 
 ```js
-// Provide example code - not IDL - demonstrating the design of the feature.
-
-// If this API can be used on its own to address a user need,
-// link it back to one of the scenarios in the goals section.
-
-// If you need to show how to get the feature set up
-// (initialized, or using permissions, etc.), include that too.
+function getPresetFeatures() {
+  switch (navigator.cpuPerformance) {
+    case 1:
+      return {
+        videoQuality: "QVGA",
+        frameRate: 15,
+        effects: [],
+      };
+    case 2:
+      return {
+        videoQuality: "VGA",
+        frameRate: 15,
+        effects: ['voice-detection', 'animated-reactions'],
+      };
+    case 3:
+      return {
+        videoQuality: "720p",
+        frameRate: 30,
+        effects: ['voice-detection', 'animated-reactions',
+                  'noise-reduction'],
+      };
+    case 4:
+    case 0:    // Assuming high performance settings for unknown devices
+    default:   // and for performance tiers higher than 4.
+      return {
+        videoQuality: "1080p",
+        frameRate: 30,
+        effects: ['voice-detection', 'animated-reactions',
+                  'noise-reduction', 'virtual-background'],
+      };
+  }
+}
 ```
 
-[Where necessary, provide links to longer explanations of the relevant pre-existing concepts and API.
-If there is no suitable external documentation, you might like to provide supplementary information as an appendix in this document, and provide an internal link where appropriate.]
+The API's specification should determine the smallest and largest acceptable
+bucket size, to prevent fingerprinting. This size should be in the order of a
+few hundred different CPU models.
 
-[If this is already specced, link to the relevant section of the spec.]
+## Alternatives Considered
 
-[If spec work is in progress, link to the PR or draft of the spec.]
+### Nature and Semantics of Performance Buckets
 
-[If you have more potential solutions in mind, add ## Potential Solution 2, 3, etc. sections.]
+As prescribed by this document, performance buckets are "stable", in the sense
+that the mapping of a user device to one bucket does not change with time. Using
+an alternative approach, buckets could be "moving" and some particular hardware
+that is mapped to one bucket today would be allowed to be mapped to one other
+(most probably inferior) bucket in the future. With moving buckets, the total
+number of buckets could be kept constant. In contrast, new stable performance
+buckets need to be created when new hardware emerges that is significantly more
+powerful than the existing one. It is not clear, however, when exactly a such
+new bucket should be introduced, as new buckets should be large enough to
+prevent fingerprinting. Moreover, fingerprinting can be an issue for "too old"
+hardware as well, because the number of actual devices on the internet that are
+mapped to the lower buckets will certainly diminish with the passing of time.
 
-### How this solution would solve the use cases
+Using stable buckets has been preferred, as it respects obsolete hardware and
+applications: The same version of a web application produces the same user
+experience on the same hardware, at any time in the future.
 
-[If there are a suite of interacting APIs, show how they work together to solve the use cases described.]
+### Benchmark-based Classification
 
-#### Use case 1
+The use of specific benchmark, included in the proposed API's specification, for
+classifying user devices in a small number of performance buckets has been
+considered as an alternative to leaving the details of this classification as
+implementation-specific. Ideally, such a benchmark should be as simple as
+possible, defined in JavaScript and/or WebAssembly and publicly available. Its
+result should be a numerical score and the API's specification should define how
+this score is mapped to the performance buckets.
 
-[Description of the end-user scenario]
+In case a benchmark is executed dynamically in the browser to classify the user
+device, we should keep in mind that we have no control over the device, and
+therefore we cannot guarantee an ideal and reproducible benchmarking
+environment. Because of changing workloads in the user device, it is possible
+that the classification will be different at different moments in time and this
+may result in a different user experience for a web application. For this
+reason, not using a benchmark is the API's specification has been preferred.
+Browsers are free to implement the mapping of user devices to performance
+buckets in any way that they see fit, using static hardware characteristics or
+executing benchmarks dynamically.
 
-```js
-// Sample code demonstrating how to use these APIs to address that scenario.
-```
+## Accessibility, Privacy, and Security Considerations
 
-#### Use case 2
+This API raises several issues about user privacy and fingerprinting, discussed
+in more detail in the main body of the document. The issues are mitigated mainly
+by mapping user devices to a small number of performance buckets, each
+containing a fairly large number of devices that exist on the internet at any
+given time, both as an absolute number and as distinct device models.
 
-[etc.]
+Research results show that detecting architecture using microbenchmarks in a
+browser is feasible to a large extent (both for CPU (see [1]) and for GPU (see
+[2] and [3]), so there is probably no point in trying too hard to protect it.
 
-## Detailed design discussion
-
-### [Tricky design choice #1]
-
-[Talk through the tradeoffs in coming to the specific design point you want to make.]
-
-```js
-// Illustrated with example code.
-```
-
-[This may be an open question,
-in which case you should link to any active discussion threads.]
-
-### [Tricky design choice 2]
-
-[etc.]
-
-## Considered alternatives
-
-[This should include as many alternatives as you can,
-from high level architectural decisions down to alternative naming choices.]
-
-### [Alternative 1]
-
-[Describe an alternative which was considered,
-and why you decided against it.]
-
-### [Alternative 2]
-
-[etc.]
-
-## Security and Privacy Considerations
-
-[Describe any interesting answers you give to the [Security and Privacy Self-Review
-Questionnaire](https://www.w3.org/TR/security-privacy-questionnaire/) and any interesting ways that
-your feature interacts with [Chromium's Web Platform Security
-Guidelines](https://chromium.googlesource.com/chromium/src/+/master/docs/security/web-platform-security-guidelines.md).]
+The API will only be available on HTTPS secure connections.
 
 ## Stakeholder Feedback / Opposition
 
-[Implementors and other stakeholders may already have publicly stated positions on this work. If you can, list them here with links to evidence as appropriate.]
+- Chrome: Positive
+- Edge: No public signal
+- Firefox: No public signal
+- Safari: No public signal
 
-- [Implementor A] : Positive
-- [Stakeholder B] : No signals
-- [Implementor C] : Negative
-
-[If appropriate, explain the reasons given by other implementors for their concerns.]
-
-## References & acknowledgements
-
-[Your design will change and be informed by many people; acknowledge them in an ongoing way! It helps build community and, as we only get by through the contributions of many, is only fair.]
-
-[Unless you have a specific reason not to, these should be in alphabetical order.]
+## References & Acknowledgements
 
 Many thanks for valuable feedback and advice from:
 
-- [Person 1]
-- [Person 2]
-- [etc.]
+- Dominic Farolino
+- Deepti Gandluri
+- Reilly Grant
+- Tomas Gunnarsson
+- Markus Handell
+- Michael Lippautz
+- Thomas Nattestad
+- Nicola Tommasi
+- Guido Urdaneta
+- Måns Vestin
+- Chen Xing
+
+This explainer is based on
+[the W3C TAG's template](https://github.com/w3ctag/explainer-explainer).
+
+[1]: https://misc0110.net/files/uarchfp_esorics22.pdf
+[2]: https://ieeexplore.ieee.org/document/5214359
+[3]: https://ieeexplore.ieee.org/document/5452013
