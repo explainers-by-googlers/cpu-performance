@@ -50,12 +50,11 @@ is not an option, as it violates user privacy by allowing fingerprinting.
 
 ## Motivating Use Cases
 
-At present, some video conferencing applications support advanced functionality
-by relying on internal/private browser extensions or APIs (see the [Hangouts
-Extension](https://crsrc.org/c/chrome/browser/resources/hangout_services/thunk.js?q=thunk.js))
-to classify devices into performance categories. Our proposal allows these
-applications to support existing functionality without depending on such
-non-standard features.
+At present, some platforms make it possible for apps such as video conferencing
+applications to classify devices into performance categories via advanced
+non-web-exposed functionality. Our proposal allows these applications to support
+existing functionality that's enabled by device performance classification,
+without depending on such non-standard features.
 
 Applications whose functionality depends on client-side hardware detection often
 resort to running benchmark workloads, to estimate hardware capabilities.
