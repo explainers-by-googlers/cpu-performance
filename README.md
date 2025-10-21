@@ -220,7 +220,7 @@ containing a fairly large number of devices that exist on the internet at any
 given time, both as an absolute number and as distinct device models.
 
 Research results show that detecting architecture using microbenchmarks in a
-browser is feasible to a large extent (both for CPU (see [1]) and for GPU (see
+browser is feasible to a large extent, both for CPU (see [1]) and for GPU (see
 [2] and [3]), so there is probably no point in trying too hard to protect it.
 
 The API will only be available on HTTPS secure connections.
