@@ -11,7 +11,7 @@ feedback on the proposed solution. It has not been approved to ship in Chrome.
 - [Issue tracker](https://github.com/explainers-by-googlers/cpu-performance/issues)
 - [Discussion forum](https://github.com/explainers-by-googlers/cpu-performance/discussions)
 
-## Table of Contents [if the explainer is longer than one printed page]
+## Table of Contents
 
 <!-- Update this table of contents by running `npx doctoc README.md` -->
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -115,7 +115,10 @@ an unknown performance tier (returned in case the API's implementation is
 unable to classify the user device).
 
 For example, a video conferencing application could interpret the four
-performance tiers as follows:
+performance tiers as follows. Bear in mind that this interpretation is
+application-specific and, even then, it may have to be updated in the
+future if the application itself is updated and its hardware requirements
+change.
 
 -   1: devices that are practically unusable for video calls;
 -   2: underpowered devices but still adequately suited for video calls;
@@ -123,8 +126,9 @@ performance tiers as follows:
 -   4: devices that can run even the most demanding scenarios and have
     performance to spare for multitasking.
 
-It could use the value of `navigator.cpuPerformance` for pre-selecting a number
-of features that are best supported by the user device's performance tier.
+Such an application could use the value of `navigator.cpuPerformance`
+for pre-selecting a number of features that are best supported by the
+user device's performance tier.
 
 ```js
 function getPresetFeatures() {
