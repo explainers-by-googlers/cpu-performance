@@ -116,8 +116,8 @@ special value 0 will correspond to an unknown performance tier (returned in
 case the API's implementation is unable to classify the user device).
 Applications using the API should handle additional tiers which are likely to
 be added in future as devices improve over time. Implementations should not
-redefine tiers—that is tier 4 devices should not be reclassified as tier 3 to
-accommodate newer, higher-powered devices as technology improves. Instead
+redefine tiers --— that is, tier 4 devices should not be reclassified as tier 3
+to accommodate newer, higher-powered devices as technology improves. Instead
 implementations should add a tier 5 for those newer devices when the need
 arises, and then a tier 6 and so on.
 
