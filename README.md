@@ -111,15 +111,15 @@ will be implementation-specific and it will be generally expected to reflect
 the **performance tier** in which a user device belongs. Higher values
 correspond to higher performance tiers.
 
-There will be at least four distinct performance tiers, numbered 1-4, and the
+There will be four distinct performance tiers, numbered 1-4, and the
 special value 0 will correspond to an unknown performance tier (returned in
 case the API's implementation is unable to classify the user device).
 Applications using the API should handle additional tiers which are likely to
 be added in future as devices improve over time. Implementations should not
 redefine tiers; that is, tier 4 devices should not be reclassified as tier 3
-to accommodate newer, higher-powered devices as technology improves. Instead
-implementations should add a tier 5 for those newer devices when the need
-arises, and then a tier 6 and so on.
+to accommodate newer, higher-powered devices as technology improves. Instead,
+a new tier 5 will be added for those newer devices when the need arises, and
+then a tier 6 and so on.
 
 For example, a video conferencing application could interpret the four
 performance tiers as follows. Bear in mind that this interpretation is
